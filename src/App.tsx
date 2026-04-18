@@ -8,6 +8,24 @@ import { Trophy, Users, Send, Image as ImageIcon, CheckCircle, ArrowRight, Star,
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { Registration, RegistrationFormData } from './types.ts';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  orderBy, 
+  serverTimestamp, 
+  Timestamp,
+  doc,
+  getDoc
+} from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // --- Components ---
 
@@ -116,8 +134,19 @@ export default function App() {
   const fetchRegistrations = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/registrations');
-      const data = await res.json();
+      const q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => {
+        const docData = doc.data();
+        return {
+          id: doc.id,
+          username: docData.username || '',
+          description: docData.description || '',
+          reason: docData.reason || '',
+          image: docData.image || null,
+          createdAt: (docData.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+        } as Registration;
+      });
       setRegistrations(data);
     } catch (err) {
       console.error('Error fetching registrations:', err);
@@ -129,6 +158,11 @@ export default function App() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Basic size check for Firestore (max doc size 1MB, so we limit images)
+      if (file.size > 800000) {
+        alert("La imagen es demasiado grande. Por favor sube una de menos de 800KB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData({ ...formData, image: reader.result as string });
@@ -143,20 +177,18 @@ export default function App() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/registrations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      await addDoc(collection(db, 'registrations'), {
+        ...formData,
+        createdAt: serverTimestamp(),
       });
 
-      if (res.ok) {
-        setSubmitted(true);
-        setFormData({ username: '', description: '', reason: '', image: null });
-        fetchRegistrations();
-        setTimeout(() => setSubmitted(false), 5000);
-      }
+      setSubmitted(true);
+      setFormData({ username: '', description: '', reason: '', image: null });
+      fetchRegistrations();
+      setTimeout(() => setSubmitted(false), 5000);
     } catch (err) {
       console.error('Error submitting registration:', err);
+      alert("Error al enviar la inscripción. Inténtalo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -167,20 +199,23 @@ export default function App() {
     setIsAdminVerifying(true);
     setAdminError('');
     try {
-      const res = await fetch('/api/admin/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: adminPassword }),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      // Check for password in Firestore settings/admin
+      const adminDoc = await getDoc(doc(db, 'settings', 'admin'));
+      
+      let correctPassword = 'admin123'; // Default fallback
+      if (adminDoc.exists()) {
+        correctPassword = adminDoc.data().password;
+      }
+
+      if (adminPassword === correctPassword) {
         setIsAdminAuthenticated(true);
-        setRegistrations(data.registrations);
+        fetchRegistrations(); // Refresh list to get full data
       } else {
-        setAdminError(data.error);
+        setAdminError('Contraseña incorrecta');
       }
     } catch (err) {
-      setAdminError('Error de conexión');
+      console.error('Admin verify error:', err);
+      setAdminError('Error al verificar contraseña');
     } finally {
       setIsAdminVerifying(false);
     }

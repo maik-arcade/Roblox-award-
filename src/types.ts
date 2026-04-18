@@ -1,5 +1,5 @@
 export interface Registration {
-  id: number;
+  id: string;
   username: string;
   description: string;
   reason: string;

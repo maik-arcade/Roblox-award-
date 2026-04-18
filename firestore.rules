@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Registrations collection
+    match /registrations/{regId} {
+      function isValidRegistration(data) {
+        return data.username is string && data.username.size() <= 100 &&
+               data.description is string && data.description.size() <= 1000 &&
+               data.reason is string && data.reason.size() <= 2000 &&
+               data.createdAt is timestamp;
+      }
+
+      // Anyone can create an inscription
+      allow create: if isValidRegistration(request.resource.data) &&
+                      request.resource.data.createdAt == request.time;
+      
+      // We allow reading for the "Nominados" list, but we'll remind the user 
+      // that this technically exposes description/reason if someone uses the SDK.
+      allow list, get: if true;
+    }
+
+    // Settings for admin password (simple but not strictly secure for production leaks)
+    match /settings/admin {
+      allow get: if true;
+      allow write: if false; // No one can change it from client
+    }
+  }
+}

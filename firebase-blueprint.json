@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "Registration": {
+      "title": "Registration",
+      "description": "User registration for Roblox Awards",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "description": { "type": "string" },
+        "reason": { "type": "string" },
+        "image": { "type": "string", "description": "Base64 encoded image" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "description", "reason", "createdAt"]
+    },
+    "AdminSettings": {
+      "title": "Admin Settings",
+      "description": "System settings including admin password",
+      "type": "object",
+      "properties": {
+        "password": { "type": "string" }
+      },
+      "required": ["password"]
+    }
+  },
+  "firestore": {
+    "registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Collection of all user registrations"
+    },
+    "settings/admin": {
+      "schema": "AdminSettings",
+      "description": "Single document for admin credentials"
+    }
+  }
+}
