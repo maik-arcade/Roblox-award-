@@ -306,7 +306,7 @@ export default function App() {
               className="form-card rounded-xl p-8 md:p-12 overflow-hidden relative"
             >
               {/* Decorative elements */}
-              <div className="absolute top-0 right-0 p-4 opacity-10">
+              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                 <Sparkles size={120} className="text-gold" />
               </div>
 
@@ -331,30 +331,34 @@ export default function App() {
                   </button>
                 </motion.div>
               ) : (
-                  <form onSubmit={handleSubmit} className="space-y-8">
+                  <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
                     {/* Step 1: Gender Selection */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 relative z-20">
                       <label className="input-label block text-center mb-4">ELIGE TU GÉNERO</label>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4 relative">
                         {['Hombre', 'Mujer'].map((g) => (
                           <button
                             key={g}
                             type="button"
-                            onClick={() => setFormData({ ...formData, gender: g })}
-                            className={`py-4 rounded-xl border-2 transition-all duration-300 flex items-center justify-center gap-3 font-bold ${
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setFormData({ ...formData, gender: g });
+                            }}
+                            className={`py-4 rounded-xl border-2 transition-all duration-300 flex items-center justify-center gap-3 font-bold relative z-30 touch-manipulation ${
                               formData.gender === g
                                 ? 'border-gold bg-gold/20 text-gold shadow-[0_0_20px_rgba(212,175,55,0.2)]'
                                 : 'border-zinc-800 bg-zinc-900/50 text-zinc-500 hover:border-gold/30'
                             }`}
                           >
-                            <span className="uppercase tracking-widest">{g}</span>
+                            <span className="uppercase tracking-widest pointer-events-none">{g}</span>
                           </button>
                         ))}
                       </div>
                     </div>
 
                     {/* Step 2: Category Selection */}
-                    <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                    <div className="space-y-4 pt-4 border-t border-zinc-800/50 relative z-20">
                       <label className="input-label block text-center mb-4">CATEGORÍA DE PARTICIPACIÓN</label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {[
@@ -368,14 +372,18 @@ export default function App() {
                           <button
                             key={cat}
                             type="button"
-                            onClick={() => setFormData({ ...formData, category: cat })}
-                            className={`p-4 rounded-lg border text-[10px] md:text-xs font-bold transition-all duration-300 ${
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setFormData({ ...formData, category: cat });
+                            }}
+                            className={`p-4 rounded-lg border text-[10px] md:text-xs font-bold transition-all duration-300 relative z-30 touch-manipulation ${
                               formData.category === cat
                                 ? 'border-gold bg-gold/10 text-gold shadow-lg'
                                 : 'border-zinc-800 bg-zinc-900/40 text-zinc-500 hover:border-zinc-700'
                             }`}
                           >
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-2 pointer-events-none">
                               {formData.category === cat && <Trophy size={14} className="text-gold" />}
                               <span className="uppercase leading-tight">{cat}</span>
                             </div>
