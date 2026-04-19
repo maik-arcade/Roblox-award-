@@ -4,7 +4,7 @@
  */
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Users, Send, Image as ImageIcon, CheckCircle, ArrowRight, Star, Loader2, Sparkles, Lock, X } from 'lucide-react';
+import { Trophy, Users, Send, Image as ImageIcon, CheckCircle, ArrowRight, Star, Loader2, Sparkles, Lock, X, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { Registration, RegistrationFormData } from './types.ts';
@@ -19,7 +19,8 @@ import {
   serverTimestamp, 
   Timestamp,
   doc,
-  getDoc
+  getDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -199,25 +200,42 @@ export default function App() {
     setIsAdminVerifying(true);
     setAdminError('');
     try {
-      // Check for password in Firestore settings/admin
-      const adminDoc = await getDoc(doc(db, 'settings', 'admin'));
+      let correctPassword = (import.meta as any).env.VITE_ADMIN_PASSWORD || 'admin123';
       
-      let correctPassword = 'admin123'; // Default fallback
-      if (adminDoc.exists()) {
-        correctPassword = adminDoc.data().password;
+      try {
+        // Try to get override from Firestore
+        const adminDoc = await getDoc(doc(db, 'settings', 'admin'));
+        if (adminDoc.exists()) {
+          correctPassword = adminDoc.data().password;
+        }
+      } catch (dbErr) {
+        console.warn('Could not reach Firestore settings, using fallback password', dbErr);
       }
 
-      if (adminPassword === correctPassword) {
+      if (adminPassword.trim() === correctPassword.trim()) {
         setIsAdminAuthenticated(true);
-        fetchRegistrations(); // Refresh list to get full data
+        fetchRegistrations();
       } else {
         setAdminError('Contraseña incorrecta');
       }
     } catch (err) {
       console.error('Admin verify error:', err);
-      setAdminError('Error al verificar contraseña');
+      setAdminError(`Error: ${err instanceof Error ? err.message : 'Desconocido'}`);
     } finally {
       setIsAdminVerifying(false);
+    }
+  };
+
+  const handleDelete = async (id: string, username: string) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar la inscripción de "${username}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'registrations', id));
+      // Remove from local state immediately
+      setRegistrations(prev => prev.filter(reg => reg.id !== id));
+    } catch (err) {
+      console.error('Error deleting registration:', err);
+      alert("Error al eliminar la inscripción.");
     }
   };
 
@@ -494,6 +512,7 @@ export default function App() {
                           <th className="px-6 py-4">Actividad</th>
                           <th className="px-6 py-4">Razón</th>
                           <th className="px-6 py-4">Fecha</th>
+                          <th className="px-6 py-4">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -520,6 +539,15 @@ export default function App() {
                             <td className="px-6 py-4 text-zinc-400 text-sm align-top pt-8 max-w-sm whitespace-pre-wrap">{reg.reason}</td>
                             <td className="px-6 py-4 text-zinc-500 text-xs align-top pt-8">
                               {new Date(reg.createdAt).toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 align-top pt-8">
+                              <button
+                                onClick={() => handleDelete(reg.id, reg.username)}
+                                className="text-zinc-600 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-500/10"
+                                title="Eliminar inscripción"
+                              >
+                                <Trash2 size={18} />
+                              </button>
                             </td>
                           </tr>
                         ))}
