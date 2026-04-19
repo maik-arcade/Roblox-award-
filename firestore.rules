@@ -23,6 +23,9 @@ service cloud.firestore {
       allow create: if isValidRegistration(request.resource.data) &&
                       request.resource.data.createdAt == request.time;
       
+      // Allow deletion (usually for admin)
+      allow delete: if true;
+      
       // We allow reading for the "Nominados" list, but we'll remind the user 
       // that this technically exposes description/reason if someone uses the SDK.
       allow list, get: if true;
