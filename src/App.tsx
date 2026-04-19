@@ -125,6 +125,8 @@ export default function App() {
     username: '',
     description: '',
     reason: '',
+    gender: '',
+    category: '',
     image: null,
   });
 
@@ -144,6 +146,8 @@ export default function App() {
           username: docData.username || '',
           description: docData.description || '',
           reason: docData.reason || '',
+          gender: docData.gender || '',
+          category: docData.category || '',
           image: docData.image || null,
           createdAt: (docData.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
         } as Registration;
@@ -174,7 +178,10 @@ export default function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.description || !formData.reason) return;
+    if (!formData.username || !formData.description || !formData.reason || !formData.gender || !formData.category) {
+      alert("Por favor completa todos los campos, incluyendo género y categoría.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -184,7 +191,7 @@ export default function App() {
       });
 
       setSubmitted(true);
-      setFormData({ username: '', description: '', reason: '', image: null });
+      setFormData({ username: '', description: '', reason: '', gender: '', category: '', image: null });
       fetchRegistrations();
       setTimeout(() => setSubmitted(false), 5000);
     } catch (err) {
@@ -324,69 +331,123 @@ export default function App() {
                   </button>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* User Info */}
-                    <div className="space-y-6">
-                      <div>
-                        <label className="input-label mb-2 block">
-                          TU NOMBRE
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.username}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                          placeholder="Ej: BloxMaster_99"
-                          className="w-full input-field rounded px-5 py-3 focus:outline-none placeholder:text-zinc-600"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="input-label mb-2 block">
-                          ¿A qué te dedicas?
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.description}
-                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                          placeholder="Desarrollador, diseñador, streamer..."
-                          className="w-full input-field rounded px-5 py-3 focus:outline-none placeholder:text-zinc-600"
-                        />
+                  <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* Step 1: Gender Selection */}
+                    <div className="space-y-4">
+                      <label className="input-label block text-center mb-4">ELIGE TU GÉNERO</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {['Hombre', 'Mujer'].map((g) => (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, gender: g })}
+                            className={`py-4 rounded-xl border-2 transition-all duration-300 flex items-center justify-center gap-3 font-bold ${
+                              formData.gender === g
+                                ? 'border-gold bg-gold/20 text-gold shadow-[0_0_20px_rgba(212,175,55,0.2)]'
+                                : 'border-zinc-800 bg-zinc-900/50 text-zinc-500 hover:border-gold/30'
+                            }`}
+                          >
+                            <span className="uppercase tracking-widest">{g}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Image Upload */}
-                    <div className="space-y-2">
-                      <label className="input-label mb-2 block">
-                        Imagen de Perfil
-                      </label>
-                      <div className="relative group overflow-hidden bg-white/5 border border-dashed border-gold/40 rounded aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-gold transition-colors">
-                        {formData.image ? (
-                          <>
-                            <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <p className="text-white text-sm font-medium">Cambiar imagen</p>
+                    {/* Step 2: Category Selection */}
+                    <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                      <label className="input-label block text-center mb-4">CATEGORÍA DE PARTICIPACIÓN</label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {[
+                          'Tiktoker del año',
+                          'Modelo del año',
+                          'Chico del año',
+                          'Famoso/a del año',
+                          'Trend del año',
+                          'Entretenimiento del año'
+                        ].map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, category: cat })}
+                            className={`p-4 rounded-lg border text-[10px] md:text-xs font-bold transition-all duration-300 ${
+                              formData.category === cat
+                                ? 'border-gold bg-gold/10 text-gold shadow-lg'
+                                : 'border-zinc-800 bg-zinc-900/40 text-zinc-500 hover:border-zinc-700'
+                            }`}
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              {formData.category === cat && <Trophy size={14} className="text-gold" />}
+                              <span className="uppercase leading-tight">{cat}</span>
                             </div>
-                          </>
-                        ) : (
-                          <div className="text-center p-6">
-                            <ImageIcon className="mx-auto w-12 h-12 text-zinc-600 mb-2 group-hover:text-gold transition-colors" />
-                            <p className="text-zinc-500 text-sm">Click para subir foto</p>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Why Participate */}
+                    <div className="pt-6 border-t border-zinc-800/50">
+                      <div className="grid md:grid-cols-2 gap-8">
+                        {/* User Info */}
+                        <div className="space-y-6">
+                          <div>
+                            <label className="input-label mb-2 block">
+                              TU NOMBRE
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.username}
+                              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                              placeholder="Ej: BloxMaster_99"
+                              className="w-full input-field rounded px-5 py-3 focus:outline-none placeholder:text-zinc-600"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="input-label mb-2 block">
+                              ¿A qué te dedicas?
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.description}
+                              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                              placeholder="Desarrollador, diseñador, streamer..."
+                              className="w-full input-field rounded px-5 py-3 focus:outline-none placeholder:text-zinc-600"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Image Upload */}
+                        <div className="space-y-2">
+                          <label className="input-label mb-2 block">
+                            Imagen de Perfil
+                          </label>
+                          <div className="relative group overflow-hidden bg-white/5 border border-dashed border-gold/40 rounded aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-gold transition-colors">
+                            {formData.image ? (
+                              <>
+                                <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                  <p className="text-white text-sm font-medium">Cambiar imagen</p>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-center p-6">
+                                <ImageIcon className="mx-auto w-12 h-12 text-zinc-600 mb-2 group-hover:text-gold transition-colors" />
+                                <p className="text-zinc-500 text-sm">Click para subir foto</p>
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Why Participate */}
                   <div>
                     <label className="input-label mb-2 block">
                       ¿Por qué quieres participar?
@@ -509,7 +570,8 @@ export default function App() {
                       <thead className="text-[10px] uppercase tracking-widest text-gold bg-black/40">
                         <tr>
                           <th className="px-6 py-4">Usuario</th>
-                          <th className="px-6 py-4">Actividad</th>
+                          <th className="px-6 py-4">Perfil</th>
+                          <th className="px-6 py-4">Género/Cat</th>
                           <th className="px-6 py-4">Razón</th>
                           <th className="px-6 py-4">Fecha</th>
                           <th className="px-6 py-4">Acciones</th>
@@ -535,7 +597,17 @@ export default function App() {
                                 <span className="font-bold text-white tracking-wide">{reg.username}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-zinc-400 text-sm align-top pt-8">{reg.description}</td>
+                             <td className="px-6 py-4 text-zinc-400 text-sm align-top pt-8">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-white font-medium">{reg.description}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-zinc-400 text-xs align-top pt-8">
+                              <div className="flex flex-col gap-2">
+                                <span className="bg-gold/10 text-gold px-2 py-1 rounded w-fit border border-gold/20 font-bold uppercase tracking-tighter">{reg.gender}</span>
+                                <span className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded w-fit text-[10px] uppercase font-bold">{reg.category}</span>
+                              </div>
+                            </td>
                             <td className="px-6 py-4 text-zinc-400 text-sm align-top pt-8 max-w-sm whitespace-pre-wrap">{reg.reason}</td>
                             <td className="px-6 py-4 text-zinc-500 text-xs align-top pt-8">
                               {new Date(reg.createdAt).toLocaleString()}

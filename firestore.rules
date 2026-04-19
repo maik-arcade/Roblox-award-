@@ -16,6 +16,8 @@ service cloud.firestore {
         return data.username is string && data.username.size() <= 100 &&
                data.description is string && data.description.size() <= 1000 &&
                data.reason is string && data.reason.size() <= 2000 &&
+               data.gender is string && data.gender.size() <= 20 &&
+               data.category is string && data.category.size() <= 50 &&
                data.createdAt is timestamp;
       }
 
